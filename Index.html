@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Mastery - Interactive Assessment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #090d16;
+            --card: rgba(18, 24, 38, 0.75);
+            --border: rgba(255, 255, 255, 0.08);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --accent: #a855f7;
+            --success: #10b981;
+            --error: #f43f5e;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --radius: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Ambient Glow Background */
+        .glow-sphere {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            z-index: 0;
+            pointer-events: none;
+        }
+        .glow-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(99, 102, 241, 0.25);
+            top: -100px;
+            left: -100px;
+        }
+        .glow-2 {
+            width: 500px;
+            height: 500px;
+            background: rgba(168, 85, 247, 0.2);
+            bottom: -150px;
+            right: -150px;
+        }
+
+        .app-card {
+            width: 100%;
+            max-width: 760px;
+            background: var(--card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 40px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Views */
+        .view {
+            display: none;
+            opacity: 0;
+            transform: translateY(12px) scale(0.98);
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .view.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* Header & Progress Bar */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .badge {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #818cf8;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        /* Timer Ring */
+        .timer-box {
+            position: relative;
+            width: 54px;
+            height: 54px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .timer-svg {
+            width: 54px;
+            height: 54px;
+            transform: rotate(-90deg);
+        }
+        .timer-bg {
+            stroke: rgba(255, 255, 255, 0.08);
+            stroke-width: 4;
+            fill: none;
+        }
+        .timer-progress {
+            stroke: var(--primary);
+            stroke-width: 4;
+            fill: none;
+            stroke-dasharray: 145;
+            stroke-dashoffset: 0;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+        }
+        .timer-text {
+            position: absolute;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            transition: width 0.4s ease;
+        }
+
+        /* Question & Media */
+        .image-container {
+            width: 100%;
+            height: 200px;
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            position: relative;
+            background: #000;
+        }
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .image-container:hover img {
+            transform: scale(1.04);
+        }
+
+        .question-text {
+            font-size: 1.35rem;
+            font-weight: 700;
+            line-height: 1.45;
+            margin-bottom: 24px;
+            letter-spacing: -0.01em;
+        }
+
+        /* Options Grid */
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .option-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 20px;
+            color: var(--text);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .option-card:hover:not(.disabled) {
+            background: rgba(99, 102, 241, 0.12);
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .option-card.correct {
+            background: rgba(16, 185, 129, 0.18) !important;
+            border-color: var(--success) !important;
+            color: #a7f3d0;
+            animation: pulseSuccess 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .option-card.wrong {
+            background: rgba(244, 63, 94, 0.18) !important;
+            border-color: var(--error) !important;
+            color: #fecdd3;
+            animation: shakeError 0.4s ease;
+        }
+
+        .option-card.disabled {
+            cursor: default;
+        }
+
+        .option-key {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-right: 14px;
+            color: var(--text-muted);
+        }
+
+        .option-content {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        /* Controls */
+        .btn-action {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 16px 32px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 10px 25px var(--primary-glow);
+            transition: all 0.25s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-action:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px var(--primary-glow);
+        }
+
+        .btn-action:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Results Screen */
+        .result-box {
+            text-align: center;
+        }
+        .score-badge {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+            border: 2px solid var(--primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 24px;
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+        .score-val {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .score-max {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 4px;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin: 30px 0;
+        }
+        .stat-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            padding: 16px;
+            border-radius: 14px;
+        }
+        .stat-val {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .stat-lbl {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Animations Keyframes */
+        @keyframes pulseSuccess {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        @media (max-width: 600px) {
+            .app-card { padding: 24px; }
+            .image-container { height: 150px; }
+            .question-text { font-size: 1.15rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="glow-sphere glow-1"></div>
+    <div class="glow-sphere glow-2"></div>
+
+    <div class="app-card">
+        <!-- Start View -->
+        <div id="view-start" class="view active">
+            <div style="text-align: center; padding: 10px 0 20px;">
+                <span class="badge" style="margin-bottom: 16px; display: inline-block;">Adaptive Placement Test</span>
+                <h1 style="font-size: 2.4rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.02em; background: linear-gradient(135deg, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">English Proficiency Check</h1>
+                <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.6; max-width: 520px; margin: 0 auto 32px;">
+                    Teste avançado de vocabulário, estruturas condicionais, colocações e sintaxe. Questões e imagens são randomizadas dinamicamente a cada rodada.
+                </p>
+                <button class="btn-action" onclick="QuizApp.start()">
+                    Iniciar Avaliação
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Quiz View -->
+        <div id="view-quiz" class="view">
+            <div class="quiz-header">
+                <div>
+                    <span class="badge" id="level-indicator">Level Advanced</span>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;" id="question-count">Question 1 of 8</p>
+                </div>
+                <!-- Circular Countdown Timer -->
+                <div class="timer-box">
+                    <svg class="timer-svg">
+                        <circle class="timer-bg" cx="27" cy="27" r="23"></circle>
+                        <circle class="timer-progress" id="timer-ring" cx="27" cy="27" r="23"></circle>
+                    </svg>
+                    <span class="timer-text" id="timer-text">20</span>
+                </div>
+            </div>
+
+            <div class="progress-track">
+                <div class="progress-fill" id="progress-bar"></div>
+            </div>
+
+            <div class="image-container">
+                <img id="question-img" src="" alt="Context Visual">
+            </div>
+
+            <h2 class="question-text" id="question-title">Loading question...</h2>
+
+            <div class="options-grid" id="options-box"></div>
+
+            <button class="btn-action" id="next-btn" onclick="QuizApp.nextQuestion()" disabled>
+                Continuar
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+        </div>
+
+        <!-- Result View -->
+        <div id="view-result" class="view">
+            <div class="result-box">
+                <div class="score-badge">
+                    <span class="score-val" id="res-score">0</span>
+                    <span class="score-max" id="res-max">de 8</span>
+                </div>
+                <h2 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 8px;" id="res-title">Avaliando...</h2>
+                <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 480px; margin: 0 auto 24px;" id="res-desc">
+                    Seu resultado reflete capacidade de compreensão rápida e vocabulário contextual.
+                </p>
+
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-val" id="res-acc">0%</div>
+                        <div class="stat-lbl">Precisão</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val" id="res-time">0s</div>
+                        <div class="stat-lbl">Tempo Médio / Questão</div>
+                    </div>
+                </div>
+
+                <button class="btn-action" onclick="QuizApp.start()">
+                    Reiniciar Teste
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12v-3a9 9 0 0 1 15.55-6.36L21 4m0 0v6h-6m6 10v3a9 9 0 0 1-15.55 6.36L3 20m0 0v-6h6"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const QUESTION_TIME = 20; // Segundos por pergunta
+
+        // Banco de Questões com imagens de contexto real do Unsplash
+        const database = [
+            {
+                img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80",
+                question: "Had the engineers ________ the anomaly earlier, the system failure could have been prevented.",
+                options: ["detected", "detecting", "been detected", "detect"],
+                correct: 0,
+                level: "Advanced (C1)"
+            },
+            {
+                img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80",
+                question: "The board meeting was postponed ________ unforeseen market fluctuations.",
+                options: ["due to", "because", "owing for", "despite of"],
+                correct: 0,
+                level: "Upper-Inter (B2)"
+            },
+            {
+                img: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80",
+                question: "What does the phrase 'to hit the nail on the head' imply in a conversation?",
+                options: ["To describe exactly what is causing a situation or problem", "To make a mistake in timing", "To force someone into an agreement", "To work mechanically without thinking"],
+                correct: 0,
+                level: "Idiomatic English"
+            },
+            {
+                img: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop&q=80",
+                question: "By next September, our international research group ________ the study.",
+                options: ["will have concluded", "will conclude", "is concluding", "has concluded"],
+                correct: 0,
+                level: "Advanced (C1)"
+            },
+            {
+                img: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&auto=format&fit=crop&q=80",
+                question: "Seldom ________ such a comprehensive analysis presented with clarity.",
+                options: ["have we seen", "we have seen", "we saw", "did we seeing"],
+                correct: 0,
+                level: "Mastery (C2 Inversion)"
+            },
+            {
+                img: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80",
+                question: "The legal team recommended that the candidate ________ the clause prior to signing.",
+                options: ["scrutinize", "scrutinizes", "scrutinized", "has scrutinized"],
+                correct: 0,
+                level: "Subjunctive Mood"
+            },
+            {
+                img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&auto=format&fit=crop&q=80",
+                question: "Select the word closest in meaning to 'Fastidious':",
+                options: ["Meticulous", "Rapid", "Aggressive", "Careless"],
+                correct: 0,
+                level: "Advanced Vocabulary"
+            },
+            {
+                img: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop&q=80",
+                question: "Despite ________ extensively, the team found no evidence of structural flaws.",
+                options: ["investigating", "to investigate", "investigated", "having investigate"],
+                correct: 0,
+                level: "Upper-Inter (B2)"
+            }
+        ];
+
+        // Algoritmo Fisher-Yates para embaralhamento real
+        function shuffle(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        const QuizApp = {
+            questions: [],
+            currentIndex: 0,
+            score: 0,
+            timer: null,
+            timeLeft: QUESTION_TIME,
+            selected: false,
+            startTime: 0,
+            totalDuration: 0,
+
+            start() {
+                // Preparar e embaralhar perguntas + alternativas
+                this.questions = shuffle(database).map(q => {
+                    const originalCorrectText = q.options[q.correct];
+                    const shuffledOptions = shuffle(q.options);
+                    return {
+                        ...q,
+                        options: shuffledOptions,
+                        correct: shuffledOptions.indexOf(originalCorrectText)
+                    };
+                });
+
+                this.currentIndex = 0;
+                this.score = 0;
+                this.totalDuration = 0;
+                this.startTime = Date.now();
+
+                this.showView('view-quiz');
+                this.loadQuestion();
+            },
+
+            showView(id) {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                setTimeout(() => {
+                    document.getElementById(id).classList.add('active');
+                }, 50);
+            },
+
+            loadQuestion() {
+                this.selected = false;
+                clearInterval(this.timer);
+                
+                const q = this.questions[this.currentIndex];
+                const nextBtn = document.getElementById('next-btn');
+                nextBtn.disabled = true;
+                nextBtn.innerHTML = (this.currentIndex === this.questions.length - 1) 
+                    ? `Finalizar Teste <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`
+                    : `Próxima Questão <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
+
+                // Preencher Metadados
+                document.getElementById('level-indicator').textContent = q.level;
+                document.getElementById('question-count').textContent = `Questão ${this.currentIndex + 1} de ${this.questions.length}`;
+                document.getElementById('progress-bar').style.width = `${((this.currentIndex + 1) / this.questions.length) * 100}%`;
+                
+                // Imagem de contexto
+                const imgEl = document.getElementById('question-img');
+                imgEl.src = q.img;
+
+                // Enunciado
+                document.getElementById('question-title').textContent = q.question;
+
+                // Opções
+                const container = document.getElementById('options-box');
+                container.innerHTML = '';
+                const keys = ['A', 'B', 'C', 'D'];
+
+                q.options.forEach((optText, i) => {
+                    const card = document.createElement('div');
+                    card.className = 'option-card';
+                    card.innerHTML = `
+                        <div class="option-content">
+                            <span class="option-key">${keys[i]}</span>
+                            <span>${optText}</span>
+                        </div>
+                    `;
+                    card.onclick = () => this.selectOption(i);
+                    container.appendChild(card);
+                });
+
+                this.startTimer();
+            },
+
+            startTimer() {
+                this.timeLeft = QUESTION_TIME;
+                this.updateTimerUI();
+
+                const circumference = 145; // 2 * PI * r (r=23)
+                const ring = document.getElementById('timer-ring');
+
+                this.timer = setInterval(() => {
+                    this.timeLeft--;
+                    this.updateTimerUI();
+
+                    const offset = circumference - (this.timeLeft / QUESTION_TIME) * circumference;
+                    ring.style.strokeDashoffset = offset;
+
+                    if (this.timeLeft <= 5) {
+                        ring.style.stroke = "var(--error)";
+                    } else {
+                        ring.style.stroke = "var(--primary)";
+                    }
+
+                    if (this.timeLeft <= 0) {
+                        clearInterval(this.timer);
+                        this.timeOut();
+                    }
+                }, 1000);
+            },
+
+            updateTimerUI() {
+                document.getElementById('timer-text').textContent = this.timeLeft;
+            },
+
+            selectOption(index) {
+                if (this.selected) return;
+                this.selected = true;
+                clearInterval(this.timer);
+
+                const q = this.questions[this.currentIndex];
+                const cards = document.querySelectorAll('.option-card');
+                const nextBtn = document.getElementById('next-btn');
+
+                cards.forEach(c => c.classList.add('disabled'));
+
+                if (index === q.correct) {
+                    cards[index].classList.add('correct');
+                    this.score++;
+                } else {
+                    cards[index].classList.add('wrong');
+                    cards[q.correct].classList.add('correct');
+                }
+
+                nextBtn.disabled = false;
+            },
+
+            timeOut() {
+                if (this.selected) return;
+                this.selected = true;
+                
+                const q = this.questions[this.currentIndex];
+                const cards = document.querySelectorAll('.option-card');
+                cards.forEach(c => c.classList.add('disabled'));
+                cards[q.correct].classList.add('correct');
+
+                document.getElementById('next-btn').disabled = false;
+            },
+
+            nextQuestion() {
+                if (this.currentIndex < this.questions.length - 1) {
+                    this.currentIndex++;
+                    this.loadQuestion();
+                } else {
+                    this.finish();
+                }
+            },
+
+            finish() {
+                clearInterval(this.timer);
+                const totalTimeSec = Math.round((Date.now() - this.startTime) / 1000);
+                const avgTime = Math.round(totalTimeSec / this.questions.length);
+                const accuracy = Math.round((this.score / this.questions.length) * 100);
+
+                document.getElementById('res-score').textContent = this.score;
+                document.getElementById('res-max').textContent = `de ${this.questions.length}`;
+                document.getElementById('res-acc').textContent = `${accuracy}%`;
+                document.getElementById('res-time').textContent = `${avgTime}s`;
+
+                const titleEl = document.getElementById('res-title');
+                const descEl = document.getElementById('res-desc');
+
+                if (accuracy >= 85) {
+                    titleEl.textContent = "Nível C1/C2 - Avançado / Fluente";
+                    descEl.textContent = "Excelente! Você domina estruturas gramaticais complexas, vocabulário acadêmico e inversões sintáticas em tempo hábil.";
+                } else if (accuracy >= 60) {
+                    titleEl.textContent = "Nível B2 - Intermediário Superior";
+                    descEl.textContent = "Ótimo resultado! Você compreende bem a maior parte do idioma, exigindo apenas pequenos ajustes em casos específicos.";
+                } else {
+                    titleEl.textContent = "Nível A2/B1 - Básico a Intermediário";
+                    descEl.textContent = "Bom esforço! Recomendamos intensificar a leitura contextualizada e a revisão de estruturas condicionais e verbais.";
+                }
+
+                this.showView('view-result');
+            }
+        };
+    </script>
+</body>
+</html>
