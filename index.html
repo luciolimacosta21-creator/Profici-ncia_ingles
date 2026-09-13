@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexicon - English Proficiency Engine</title>
-    <!-- Tailwind CSS via CDN -->
+    <title>Lexicon Engine — Assessment & Student Portal</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -12,59 +16,125 @@
             theme: {
                 extend: {
                     colors: {
-                        brand: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81' },
-                        surface: { 800: '#121826', 850: '#0e131f', 900: '#090d16' }
+                        slate: {
+                            950: '#090d16',
+                            900: '#111726',
+                            850: '#161e31',
+                            800: '#1c263e',
+                            700: '#334155',
+                            400: '#94a3b8',
+                            300: '#cbd5e1',
+                            100: '#f1f5f9'
+                        },
+                        amber: {
+                            500: '#d97706',
+                            600: '#b45309',
+                            400: '#f59e0b'
+                        }
                     },
-                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] }
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
                 }
             }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Supabase JS Client -->
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        body { background-color: #090d16; color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .glass { background: rgba(18, 24, 38, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .glow-effect { box-shadow: 0 0 50px -10px rgba(99, 102, 241, 0.25); }
+        body {
+            background-color: #090d16;
+            color: #f1f5f9;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .surface-card {
+            background: rgba(17, 23, 38, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+        }
+
+        .surface-item {
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .surface-item:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #090d16; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden">
+<body class="min-h-screen flex items-center justify-center p-4 md:p-6 relative">
 
-    <!-- Ambient Glows -->
-    <div class="fixed -top-40 -left-40 w-96 h-96 bg-brand-600/20 rounded-full blur-[120px] pointer-events-none"></div>
-    <div class="fixed -bottom-40 -right-40 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] pointer-events-none"></div>
-
-    <main class="w-full max-w-3xl glass rounded-3xl p-6 md:p-10 glow-effect relative z-10 transition-all duration-300">
+    <main class="w-full max-w-2xl surface-card rounded-2xl p-6 md:p-10 relative z-10 transition-all duration-300">
         
-        <!-- TOP NAV -->
-        <header class="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-xl bg-brand-500 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-brand-500/30">L</div>
-                <span class="font-bold text-lg tracking-tight">Lexicon<span class="text-brand-500">.io</span></span>
+        <!-- Header Nav -->
+        <header class="flex justify-between items-center mb-8 pb-5 border-b border-white/5">
+            <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center font-bold text-amber-500 text-xs">L</div>
+                <span class="font-bold text-sm tracking-tight text-slate-300">LEXICON <span class="text-slate-500 font-normal">/ Assessment & Portal</span></span>
             </div>
-            <button onclick="App.toggleAdminModal()" class="text-xs font-semibold text-slate-400 hover:text-white transition flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                Área do Instrutor
-            </button>
+            
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="App.openStudentPortalModal()" class="text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10">
+                    <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    Portal do Aluno
+                </button>
+                <button type="button" onclick="App.openAdminModal()" class="text-xs font-semibold text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10">
+                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    Instrutor
+                </button>
+            </div>
         </header>
 
-        <!-- VIEW 1: REGISTRATION & LEVEL SELECT -->
-        <section id="view-setup" class="space-y-6">
-            <div class="text-center max-w-lg mx-auto">
-                <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-3 bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Avaliação de Proficiência</h1>
-                <p class="text-slate-400 text-sm">Preencha seus dados e escolha o nível de desafio para iniciar a prova individual monitorada.</p>
+        <!-- VIEW 1: REGISTRO E DIFICULDADE -->
+        <section id="view-setup" class="fade-in space-y-6">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-100 mb-2">Avaliação de Proficiência</h1>
+                <p class="text-slate-400 text-sm leading-relaxed">Identifique-se e selecione a dificuldade para iniciar o teste monitorado.</p>
             </div>
 
-            <form id="setup-form" onsubmit="App.startQuiz(event)" class="space-y-5 max-w-md mx-auto mt-6">
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Seu Nome Completo</label>
-                    <input type="text" id="user-name" required placeholder="Ex: Lucas Silva" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition">
+            <form onsubmit="App.startQuiz(event)" class="space-y-5 pt-2">
+                
+                <!-- Foto de Perfil / Avatar Upload -->
+                <div class="flex items-center gap-4 p-3.5 rounded-xl surface-item">
+                    <div id="avatar-preview-box" class="w-14 h-14 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                        <svg id="avatar-placeholder-icon" class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <img id="avatar-img-element" class="w-full h-full object-cover hidden" alt="Foto de Perfil">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Foto de Perfil (Opcional)</label>
+                        <input type="file" id="avatar-file-input" accept="image/*" onchange="App.handleAvatarChange(event)" class="text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer">
+                    </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Seu E-mail</label>
-                    <input type="email" id="user-email" required placeholder="lucas@exemplo.com" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nome Completo</label>
+                    <input type="text" id="user-name" required placeholder="Ex: Lucas Silva" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-amber-500/50 transition placeholder:text-slate-600">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Seu E-mail (Usado para consultar notas depois)</label>
+                    <input type="email" id="user-email" required placeholder="seu.email@exemplo.com" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-amber-500/50 transition placeholder:text-slate-600">
                 </div>
 
                 <div>
@@ -72,123 +142,164 @@
                     <div class="grid grid-cols-3 gap-3">
                         <label class="cursor-pointer">
                             <input type="radio" name="difficulty" value="easy" checked class="peer hidden">
-                            <div class="text-center py-3 rounded-xl border border-white/10 bg-slate-900/40 text-slate-400 text-xs font-bold peer-checked:border-emerald-500 peer-checked:bg-emerald-500/10 peer-checked:text-emerald-400 transition">Fácil (A1/A2)</div>
+                            <div class="text-center py-3 rounded-xl surface-item text-slate-400 text-xs font-bold peer-checked:border-emerald-500/40 peer-checked:bg-emerald-500/10 peer-checked:text-emerald-400">Fácil (A1/A2)</div>
                         </label>
                         <label class="cursor-pointer">
                             <input type="radio" name="difficulty" value="medium" class="peer hidden">
-                            <div class="text-center py-3 rounded-xl border border-white/10 bg-slate-900/40 text-slate-400 text-xs font-bold peer-checked:border-amber-500 peer-checked:bg-amber-500/10 peer-checked:text-amber-400 transition">Médio (B1/B2)</div>
+                            <div class="text-center py-3 rounded-xl surface-item text-slate-400 text-xs font-bold peer-checked:border-amber-500/40 peer-checked:bg-amber-500/10 peer-checked:text-amber-400">Médio (B1/B2)</div>
                         </label>
                         <label class="cursor-pointer">
                             <input type="radio" name="difficulty" value="hard" class="peer hidden">
-                            <div class="text-center py-3 rounded-xl border border-white/10 bg-slate-900/40 text-slate-400 text-xs font-bold peer-checked:border-rose-500 peer-checked:bg-rose-500/10 peer-checked:text-rose-400 transition">Difícil (C1/C2)</div>
+                            <div class="text-center py-3 rounded-xl surface-item text-slate-400 text-xs font-bold peer-checked:border-rose-500/40 peer-checked:bg-rose-500/10 peer-checked:text-rose-400">Difícil (C1/C2)</div>
                         </label>
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-500 font-bold py-3.5 rounded-xl transition shadow-lg shadow-brand-600/30 flex items-center justify-center gap-2 text-sm mt-4">
-                    Iniciar Avaliação Agora
+                <button type="submit" class="w-full bg-slate-100 hover:bg-white text-slate-950 font-bold py-3.5 rounded-xl transition text-sm flex items-center justify-center gap-2 mt-4">
+                    Iniciar Teste Monitorado
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </button>
             </form>
         </section>
 
         <!-- VIEW 2: QUIZ MONITOR -->
-        <section id="view-quiz" class="hidden space-y-6">
+        <section id="view-quiz" class="hidden fade-in space-y-6">
             <div class="flex items-center justify-between">
-                <div>
-                    <span id="badge-diff" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-brand-500/20 text-brand-400 border border-brand-500/30">Nível</span>
-                    <p id="quiz-progress-text" class="text-xs text-slate-400 mt-1 font-semibold">Questão 1 de 5</p>
+                <div class="flex items-center gap-2">
+                    <span id="badge-diff" class="px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-slate-800 text-slate-300 border border-white/5">LEVEL</span>
+                    <span id="quiz-progress-text" class="text-xs text-slate-400 font-medium">Questão 1 de 3</span>
                 </div>
 
-                <!-- Timer -->
-                <div class="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-white/10">
-                    <svg class="w-4 h-4 text-brand-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <span id="timer-display" class="font-mono font-bold text-sm">00:20</span>
+                <div class="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-lg border border-white/5">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span id="timer-display" class="font-mono text-xs font-bold text-slate-300">00:20</span>
                 </div>
             </div>
 
-            <!-- Progress Bar -->
-            <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
-                <div id="quiz-progress-bar" class="bg-gradient-to-r from-brand-500 to-purple-500 h-full w-0 transition-all duration-300"></div>
+            <div class="w-full bg-slate-900 rounded-full h-1 overflow-hidden">
+                <div id="quiz-progress-bar" class="bg-amber-500 h-full w-0 transition-all duration-300"></div>
             </div>
 
-            <!-- Question Card -->
-            <div class="space-y-4">
-                <h2 id="question-text" class="text-lg md:text-xl font-bold leading-relaxed">Carregando pergunta...</h2>
+            <div class="space-y-4 pt-2">
+                <h2 id="question-text" class="text-lg md:text-xl font-semibold text-slate-100 leading-relaxed">Carregando pergunta...</h2>
                 <div id="options-container" class="space-y-2.5"></div>
             </div>
 
-            <button id="btn-next" onclick="App.nextQuestion()" disabled class="w-full bg-brand-600 hover:bg-brand-500 disabled:opacity-40 disabled:cursor-not-allowed font-bold py-3.5 rounded-xl transition shadow-lg shadow-brand-600/30 text-sm">
-                Avançar
+            <button id="btn-next" onclick="App.nextQuestion()" disabled class="w-full bg-slate-100 hover:bg-white text-slate-950 disabled:opacity-30 disabled:cursor-not-allowed font-bold py-3.5 rounded-xl transition text-sm mt-4">
+                Confirmar e Avançar
             </button>
         </section>
 
-        <!-- VIEW 3: RESULT -->
-        <section id="view-result" class="hidden text-center space-y-6 py-4">
-            <div class="w-20 h-20 rounded-full bg-brand-500/20 border-2 border-brand-500 flex items-center justify-center mx-auto text-brand-400">
-                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <!-- VIEW 3: RESULTADOS -->
+        <section id="view-result" class="hidden fade-in text-center space-y-6 py-4">
+            <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto text-amber-500">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             </div>
+            
             <div>
-                <h2 class="text-2xl font-extrabold mb-1">Avaliação Concluída!</h2>
+                <h2 class="text-2xl font-bold text-slate-100 mb-1">Avaliação Concluída</h2>
                 <p class="text-slate-400 text-sm">Seus resultados foram gravados com sucesso no banco de dados.</p>
             </div>
             
             <div class="grid grid-cols-2 gap-4 max-w-sm mx-auto">
-                <div class="bg-slate-900/60 border border-white/10 p-4 rounded-2xl">
-                    <p class="text-2xl font-black text-brand-400" id="res-score">0/0</p>
-                    <p class="text-xs text-slate-400 font-semibold mt-1">Pontuação final</p>
+                <div class="surface-item p-4 rounded-xl">
+                    <p class="text-2xl font-bold text-slate-100 font-mono" id="res-score">0/0</p>
+                    <p class="text-xs text-slate-400 font-medium mt-1">Pontuação Final</p>
                 </div>
-                <div class="bg-slate-900/60 border border-white/10 p-4 rounded-2xl">
-                    <p class="text-2xl font-black text-purple-400" id="res-time">0s</p>
-                    <p class="text-xs text-slate-400 font-semibold mt-1">Tempo Total</p>
+                <div class="surface-item p-4 rounded-xl">
+                    <p class="text-2xl font-bold text-amber-500 font-mono" id="res-time">0s</p>
+                    <p class="text-xs text-slate-400 font-medium mt-1">Tempo Total</p>
                 </div>
             </div>
 
-            <button onclick="location.reload()" class="bg-white/10 hover:bg-white/20 font-bold px-6 py-3 rounded-xl text-xs transition">
+            <button onclick="location.reload()" class="bg-white/5 hover:bg-white/10 text-slate-300 font-bold px-6 py-3 rounded-xl text-xs transition border border-white/10">
                 Fazer Novo Teste
             </button>
         </section>
 
     </main>
 
-    <!-- ADMIN MODAL -->
-    <div id="admin-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
-        <div class="glass max-w-2xl w-full rounded-3xl p-6 md:p-8 relative max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-bold text-lg flex items-center gap-2">
-                    <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    Painel do Instrutor / Admin
+    <!-- MODAL PORTAL DO ALUNO (BUSCA POR E-MAIL & EDIÇÃO) -->
+    <div id="student-portal-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="surface-card max-w-xl w-full rounded-2xl p-6 md:p-8 relative max-h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center mb-6 pb-3 border-b border-white/10">
+                <h3 class="font-bold text-sm text-slate-200 tracking-wide uppercase flex items-center gap-2">
+                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    Portal do Aluno — Consulta de Testes
                 </h3>
-                <button onclick="App.toggleAdminModal()" class="text-slate-400 hover:text-white font-bold">&times;</button>
+                <button type="button" onclick="App.closeStudentPortalModal()" class="text-slate-400 hover:text-white text-xl font-bold leading-none">&times;</button>
             </div>
 
-            <!-- Login Form -->
-            <form id="admin-login-form" onsubmit="App.adminLogin(event)" class="space-y-4 py-4">
-                <p class="text-xs text-slate-400">Faça login com sua conta do Supabase Auth para acessar o histórico completo dos alunos.</p>
-                <input type="email" id="admin-email" placeholder="E-mail de admin" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500">
-                <input type="password" id="admin-password" placeholder="Senha" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500">
-                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-500 font-bold py-2.5 rounded-xl text-xs transition">Entrar no Painel</button>
+            <form onsubmit="App.searchStudentTests(event)" class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Informe seu E-mail Cadastrado</label>
+                    <div class="flex gap-2">
+                        <input type="email" id="student-search-email" required placeholder="seu.email@exemplo.com" class="flex-1 bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-500/50">
+                        <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs transition">Buscar</button>
+                    </div>
+                </div>
             </form>
 
-            <!-- Admin Data View -->
-            <div id="admin-dashboard" class="hidden flex-1 overflow-y-auto space-y-4 pr-1">
-                <div class="flex justify-between items-center text-xs text-slate-400">
-                    <span id="admin-count">0 submissões encontradas</span>
-                    <button onclick="App.adminLogout()" class="text-rose-400 hover:underline">Sair</button>
+            <div id="student-portal-content" class="hidden flex-1 overflow-y-auto space-y-4 pr-1">
+                <!-- Cabeçalho de Perfil do Aluno com Edição de Nome -->
+                <div class="p-4 rounded-xl surface-item flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <img id="student-avatar-img" class="w-12 h-12 rounded-full object-cover border border-white/10" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'/%3E%3C/svg%3E" alt="Avatar">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h4 id="student-display-name" class="font-bold text-sm text-slate-100">Nome do Aluno</h4>
+                                <button onclick="App.toggleEditNameInput()" class="text-slate-400 hover:text-amber-500 text-xs" title="Editar Nome">✏️</button>
+                            </div>
+                            <p id="student-display-email" class="text-xs text-slate-400"></p>
+                        </div>
+                    </div>
                 </div>
-                <div id="admin-results-list" class="space-y-3"></div>
+
+                <!-- Campo Oculto para Trocar Nome -->
+                <div id="edit-name-box" class="hidden p-3 rounded-xl bg-slate-900 border border-white/10 space-y-2">
+                    <label class="block text-[11px] font-bold uppercase text-slate-400">Novo Nome</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-student-name-input" class="flex-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none">
+                        <button onclick="App.updateStudentName()" class="bg-slate-100 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-white">Salvar</button>
+                    </div>
+                </div>
+
+                <!-- Lista de Testes -->
+                <div class="space-y-2.5">
+                    <h5 class="text-xs font-bold uppercase tracking-wider text-slate-400">Histórico de Provas</h5>
+                    <div id="student-tests-list" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN MODAL -->
+    <div id="admin-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="surface-card max-w-2xl w-full rounded-2xl p-6 md:p-8 relative max-h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center mb-6 pb-3 border-b border-white/10">
+                <h3 class="font-bold text-sm text-slate-200 tracking-wide uppercase flex items-center gap-2">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    Painel do Instrutor / Todos os Resultados (CRUD)
+                </h3>
+                <button type="button" onclick="App.closeAdminModal()" class="text-slate-400 hover:text-white text-xl font-bold leading-none">&times;</button>
+            </div>
+
+            <div id="admin-dashboard-box" class="flex-1 overflow-y-auto space-y-3 pr-1">
+                <div class="flex justify-between items-center text-xs text-slate-400 mb-2">
+                    <span id="admin-count" class="font-bold text-slate-300">Carregando dados...</span>
+                    <button type="button" onclick="App.loadAdminData()" class="text-amber-500 hover:underline">Atualizar Lista</button>
+                </div>
+                <div id="admin-results-list" class="space-y-2.5"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // CONFIGURAÇÃO INTEGRADAS DO SUPABASE
         const SUPABASE_URL = "https://gchcuhyfgohoxieytvoj.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjaGN1aHlmZ29ob3hpZXl0dm9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzUwMjEsImV4cCI6MjEwNDkxMTAyMX0.pyKvyjoMBK1Se9jYnR7cXprf-oxH8Zvb6k9qRJu7KRQ";
         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClientInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // BANCO DE PERGUNTAS DIVIDIDO POR DIFICULDADE
         const QUESTION_BANK = {
             easy: [
                 { q: "She _______ to the gym every morning.", opts: ["go", "goes", "going", "gone"], ans: 1 },
@@ -208,15 +319,39 @@
         };
 
         const App = {
-            user: { name: '', email: '', level: 'easy' },
+            user: { name: '', email: '', level: 'easy', avatarData: '' },
             questions: [],
             currentIndex: 0,
             userAnswers: [],
             timer: null,
             timeLeft: 20,
             startTime: 0,
+            currentPortalEmail: '',
 
-            shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); },
+            shuffle(arr) {
+                let a = [...arr];
+                for (let i = a.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [a[i], a[j]] = [a[j], a[i]];
+                }
+                return a;
+            },
+
+            // Processa upload da imagem de perfil (converte para Base64)
+            handleAvatarChange(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.user.avatarData = e.target.result;
+                    document.getElementById('avatar-placeholder-icon').classList.add('hidden');
+                    const img = document.getElementById('avatar-img-element');
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            },
 
             startQuiz(e) {
                 e.preventDefault();
@@ -232,7 +367,7 @@
                 document.getElementById('view-setup').classList.add('hidden');
                 document.getElementById('view-quiz').classList.remove('hidden');
                 
-                document.getElementById('badge-diff').textContent = `Nível ${this.user.level.toUpperCase()}`;
+                document.getElementById('badge-diff').textContent = `NÍVEL ${this.user.level.toUpperCase()}`;
                 this.loadQuestion();
             },
 
@@ -250,11 +385,17 @@
                 optionsContainer.innerHTML = '';
                 document.getElementById('btn-next').disabled = true;
 
-                q.opts.forEach((opt, idx) => {
+                const shuffledOpts = q.opts.map((opt, originalIdx) => ({ opt, originalIdx }));
+                const shuffledList = this.shuffle(shuffledOpts);
+
+                shuffledList.forEach((item, displayIdx) => {
                     const btn = document.createElement('button');
-                    btn.className = "option-btn w-full text-left p-4 rounded-xl border border-white/10 bg-slate-900/40 hover:bg-white/5 font-medium text-sm transition flex items-center justify-between";
-                    btn.innerHTML = `<span>${opt}</span><span class="w-5 h-5 rounded-full border border-white/20 flex items-center justify-center text-[10px] font-bold text-slate-500">${String.fromCharCode(65+idx)}</span>`;
-                    btn.onclick = () => this.selectOption(idx, btn);
+                    btn.className = "option-btn w-full text-left p-4 rounded-xl surface-item font-medium text-sm text-slate-200 transition flex items-center justify-between";
+                    btn.innerHTML = `
+                        <span>${item.opt}</span>
+                        <span class="w-5 h-5 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-mono text-slate-400 font-bold">${String.fromCharCode(65 + displayIdx)}</span>
+                    `;
+                    btn.onclick = () => this.selectOption(item.originalIdx, btn);
                     optionsContainer.appendChild(btn);
                 });
 
@@ -272,12 +413,12 @@
                 document.getElementById('timer-display').textContent = `00:${this.timeLeft < 10 ? '0' : ''}${this.timeLeft}`;
             },
 
-            selectOption(idx, element) {
+            selectOption(originalIdx, element) {
                 document.querySelectorAll('.option-btn').forEach(b => {
-                    b.classList.remove('border-brand-500', 'bg-brand-500/10');
+                    b.classList.remove('border-amber-500/50', 'bg-amber-500/10', 'text-amber-400');
                 });
-                element.classList.add('border-brand-500', 'bg-brand-500/10');
-                this.userAnswers[this.currentIndex] = idx;
+                element.classList.add('border-amber-500/50', 'bg-amber-500/10', 'text-amber-400');
+                this.userAnswers[this.currentIndex] = originalIdx;
                 document.getElementById('btn-next').disabled = false;
             },
 
@@ -294,6 +435,7 @@
                 }
             },
 
+            // CREATE: Salva no Supabase
             async finishQuiz() {
                 clearInterval(this.timer);
                 const totalTime = Math.round((Date.now() - this.startTime) / 1000);
@@ -309,9 +451,8 @@
                 document.getElementById('view-quiz').classList.add('hidden');
                 document.getElementById('view-result').classList.remove('hidden');
 
-                // ENVIAR RESULTADOS AO SUPABASE
                 try {
-                    await supabase.from('submissions').insert([
+                    await supabaseClientInstance.from('submissions').insert([
                         {
                             student_name: this.user.name,
                             student_email: this.user.email,
@@ -319,66 +460,176 @@
                             score: score,
                             total_questions: this.questions.length,
                             time_spent_seconds: totalTime,
-                            answers: this.userAnswers
+                            answers: this.userAnswers,
+                            avatar_url: this.user.avatarData || null
                         }
                     ]);
                 } catch (err) {
-                    console.error("Erro ao gravar dados:", err);
+                    console.error("Erro ao enviar dados ao Supabase:", err);
                 }
             },
 
-            // ADMIN LOGIC
-            toggleAdminModal() {
-                document.getElementById('admin-modal').classList.toggle('hidden');
-                document.getElementById('admin-modal').classList.toggle('flex');
+            // PORTAL DO ALUNO (READ BY EMAIL)
+            openStudentPortalModal() {
+                document.getElementById('student-portal-modal').classList.remove('hidden');
+                document.getElementById('student-portal-modal').classList.add('flex');
             },
 
-            async adminLogin(e) {
+            closeStudentPortalModal() {
+                document.getElementById('student-portal-modal').classList.add('hidden');
+                document.getElementById('student-portal-modal').classList.remove('flex');
+            },
+
+            async searchStudentTests(e) {
                 e.preventDefault();
-                const email = document.getElementById('admin-email').value;
-                const password = document.getElementById('admin-password').value;
+                const email = document.getElementById('student-search-email').value.trim();
+                if (!email) return;
 
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                this.currentPortalEmail = email;
+                const container = document.getElementById('student-portal-content');
+                const list = document.getElementById('student-tests-list');
+                list.innerHTML = '<p class="text-xs text-slate-400 py-2">Buscando histórico...</p>';
+                container.classList.remove('hidden');
 
-                if (error) {
-                    alert("Acesso negado: " + error.message);
-                } else {
-                    document.getElementById('admin-login-form').classList.add('hidden');
-                    document.getElementById('admin-dashboard').classList.remove('hidden');
-                    this.loadAdminData();
+                const { data, error } = await supabaseClientInstance
+                    .from('submissions')
+                    .select('*')
+                    .eq('student_email', email)
+                    .order('created_at', { ascending: false });
+
+                if (error || !data || data.length === 0) {
+                    list.innerHTML = '<p class="text-xs text-slate-500 py-2">Nenhum teste encontrado para este e-mail.</p>';
+                    document.getElementById('student-display-name').textContent = "Aluno Não Encontrado";
+                    document.getElementById('student-display-email').textContent = email;
+                    return;
                 }
-            },
 
-            async loadAdminData() {
-                const { data, error } = await supabase.from('submissions').select('*').order('created_at', { ascending: false });
-                
-                if (error) return alert("Erro ao carregar dados: " + error.message);
+                // Exibe dados do último perfil
+                const lastSub = data[0];
+                document.getElementById('student-display-name').textContent = lastSub.student_name;
+                document.getElementById('student-display-email').textContent = lastSub.student_email;
+                document.getElementById('new-student-name-input').value = lastSub.student_name;
 
-                document.getElementById('admin-count').textContent = `${data.length} submissões encontradas`;
-                const list = document.getElementById('admin-results-list');
+                if (lastSub.avatar_url) {
+                    document.getElementById('student-avatar-img').src = lastSub.avatar_url;
+                }
+
                 list.innerHTML = '';
-
-                data.forEach(sub => {
+                data.forEach(test => {
                     const item = document.createElement('div');
-                    item.className = "bg-slate-900/90 border border-white/10 p-3.5 rounded-xl text-xs space-y-1";
+                    item.className = "surface-item p-3 rounded-xl text-xs space-y-1";
                     item.innerHTML = `
-                        <div class="flex justify-between font-bold">
-                            <span class="text-white">${sub.student_name} (${sub.student_email})</span>
-                            <span class="text-brand-400">${sub.score}/${sub.total_questions} pts</span>
+                        <div class="flex justify-between font-semibold">
+                            <span class="text-slate-200">Nível <strong class="text-amber-500 uppercase">${test.level_selected}</strong></span>
+                            <span class="font-mono text-slate-100 font-bold">${test.score}/${test.total_questions} acertos</span>
                         </div>
                         <div class="flex justify-between text-slate-400 text-[11px]">
-                            <span>Nível: ${sub.level_selected.toUpperCase()} | Tempo: ${sub.time_spent_seconds}s</span>
-                            <span>${new Date(sub.created_at).toLocaleDateString('pt-BR')}</span>
+                            <span>Tempo: ${test.time_spent_seconds}s</span>
+                            <span>${new Date(test.created_at).toLocaleString('pt-BR')}</span>
                         </div>
                     `;
                     list.appendChild(item);
                 });
             },
 
-            async adminLogout() {
-                await supabase.auth.signOut();
-                document.getElementById('admin-login-form').classList.remove('hidden');
-                document.getElementById('admin-dashboard').classList.add('hidden');
+            toggleEditNameInput() {
+                document.getElementById('edit-name-box').classList.toggle('hidden');
+            },
+
+            // UPDATE: Altera o nome do aluno em todos os registros com aquele e-mail
+            async updateStudentName() {
+                const newName = document.getElementById('new-student-name-input').value.trim();
+                if (!newName || !this.currentPortalEmail) return;
+
+                const { error } = await supabaseClientInstance
+                    .from('submissions')
+                    .update({ student_name: newName })
+                    .eq('student_email', this.currentPortalEmail);
+
+                if (error) {
+                    alert("Erro ao atualizar nome: " + error.message);
+                } else {
+                    document.getElementById('student-display-name').textContent = newName;
+                    document.getElementById('edit-name-box').classList.add('hidden');
+                    alert("Nome atualizado com sucesso!");
+                }
+            },
+
+            // ADMIN MODAL & DELETE
+            openAdminModal() {
+                document.getElementById('admin-modal').classList.remove('hidden');
+                document.getElementById('admin-modal').classList.add('flex');
+                this.loadAdminData();
+            },
+
+            closeAdminModal() {
+                document.getElementById('admin-modal').classList.add('hidden');
+                document.getElementById('admin-modal').classList.remove('flex');
+            },
+
+            async loadAdminData() {
+                const list = document.getElementById('admin-results-list');
+                list.innerHTML = '<p class="text-slate-400 text-xs text-center py-4">Buscando banco de dados...</p>';
+
+                const { data, error } = await supabaseClientInstance
+                    .from('submissions')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    document.getElementById('admin-count').textContent = `Erro de conexão`;
+                    list.innerHTML = `<p class="text-rose-400 text-xs py-2 text-center">Verifique a conexão ou a estrutura da tabela no Supabase.</p>`;
+                    return;
+                }
+
+                document.getElementById('admin-count').textContent = `${data.length} submissões registradas`;
+                list.innerHTML = '';
+
+                if (data.length === 0) {
+                    list.innerHTML = '<p class="text-slate-500 text-xs text-center py-4">Nenhum teste foi realizado ainda.</p>';
+                    return;
+                }
+
+                data.forEach(sub => {
+                    const item = document.createElement('div');
+                    item.className = "surface-item p-3.5 rounded-xl text-xs space-y-2";
+                    item.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <img class="w-8 h-8 rounded-full object-cover border border-white/10" src="${sub.avatar_url || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'/%3E%3C/svg%3E"}" alt="Avatar">
+                                <div>
+                                    <span class="text-slate-200 font-bold block">${sub.student_name}</span>
+                                    <span class="text-slate-400 text-[11px] font-normal">${sub.student_email}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-amber-500 font-mono font-bold">${sub.score}/${sub.total_questions} pts</span>
+                                <button onclick="App.deleteSubmission('${sub.id}')" class="text-rose-400 hover:text-rose-300 text-xs p-1" title="Excluir Registro">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-slate-400 text-[11px] pt-1.5 border-t border-white/5">
+                            <span>Nível: <strong class="text-slate-300 uppercase">${sub.level_selected}</strong> | Tempo: ${sub.time_spent_seconds}s</span>
+                            <span>${new Date(sub.created_at).toLocaleString('pt-BR')}</span>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            },
+
+            // DELETE: Deleta um teste específico no Supabase
+            async deleteSubmission(id) {
+                if (!confirm("Tem certeza que deseja excluir esta submissão?")) return;
+
+                const { error } = await supabaseClientInstance
+                    .from('submissions')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) {
+                    alert("Erro ao excluir: " + error.message);
+                } else {
+                    this.loadAdminData();
+                }
             }
         };
     </script>
