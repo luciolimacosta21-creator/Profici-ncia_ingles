@@ -1,706 +1,384 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>English Mastery - Interactive Assessment</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>Lexicon - English Proficiency Engine</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81' },
+                        surface: { 800: '#121826', 850: '#0e131f', 900: '#090d16' }
+                    },
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root {
-            --bg: #090d16;
-            --card: rgba(18, 24, 38, 0.75);
-            --border: rgba(255, 255, 255, 0.08);
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.4);
-            --accent: #a855f7;
-            --success: #10b981;
-            --error: #f43f5e;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --radius: 20px;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            user-select: none;
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        /* Ambient Glow Background */
-        .glow-sphere {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(120px);
-            z-index: 0;
-            pointer-events: none;
-        }
-        .glow-1 {
-            width: 400px;
-            height: 400px;
-            background: rgba(99, 102, 241, 0.25);
-            top: -100px;
-            left: -100px;
-        }
-        .glow-2 {
-            width: 500px;
-            height: 500px;
-            background: rgba(168, 85, 247, 0.2);
-            bottom: -150px;
-            right: -150px;
-        }
-
-        .app-card {
-            width: 100%;
-            max-width: 760px;
-            background: var(--card);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 40px;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            position: relative;
-            z-index: 10;
-        }
-
-        /* Views */
-        .view {
-            display: none;
-            opacity: 0;
-            transform: translateY(12px) scale(0.98);
-            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .view.active {
-            display: block;
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-
-        /* Header & Progress Bar */
-        .quiz-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .badge {
-            background: rgba(99, 102, 241, 0.15);
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            color: #818cf8;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
-
-        /* Timer Ring */
-        .timer-box {
-            position: relative;
-            width: 54px;
-            height: 54px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .timer-svg {
-            width: 54px;
-            height: 54px;
-            transform: rotate(-90deg);
-        }
-        .timer-bg {
-            stroke: rgba(255, 255, 255, 0.08);
-            stroke-width: 4;
-            fill: none;
-        }
-        .timer-progress {
-            stroke: var(--primary);
-            stroke-width: 4;
-            fill: none;
-            stroke-dasharray: 145;
-            stroke-dashoffset: 0;
-            stroke-linecap: round;
-            transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
-        }
-        .timer-text {
-            position: absolute;
-            font-size: 0.95rem;
-            font-weight: 700;
-        }
-
-        .progress-track {
-            width: 100%;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            margin-bottom: 30px;
-            overflow: hidden;
-        }
-        .progress-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
-            border-radius: 10px;
-            transition: width 0.4s ease;
-        }
-
-        /* Question & Media */
-        .image-container {
-            width: 100%;
-            height: 200px;
-            border-radius: 14px;
-            overflow: hidden;
-            margin-bottom: 24px;
-            border: 1px solid var(--border);
-            position: relative;
-            background: #000;
-        }
-        .image-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .image-container:hover img {
-            transform: scale(1.04);
-        }
-
-        .question-text {
-            font-size: 1.35rem;
-            font-weight: 700;
-            line-height: 1.45;
-            margin-bottom: 24px;
-            letter-spacing: -0.01em;
-        }
-
-        /* Options Grid */
-        .options-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 30px;
-        }
-
-        .option-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 16px 20px;
-            color: var(--text);
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .option-card:hover:not(.disabled) {
-            background: rgba(99, 102, 241, 0.12);
-            border-color: var(--primary);
-            transform: translateX(4px);
-        }
-
-        .option-card.correct {
-            background: rgba(16, 185, 129, 0.18) !important;
-            border-color: var(--success) !important;
-            color: #a7f3d0;
-            animation: pulseSuccess 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .option-card.wrong {
-            background: rgba(244, 63, 94, 0.18) !important;
-            border-color: var(--error) !important;
-            color: #fecdd3;
-            animation: shakeError 0.4s ease;
-        }
-
-        .option-card.disabled {
-            cursor: default;
-        }
-
-        .option-key {
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.08);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 0.8rem;
-            font-weight: 700;
-            margin-right: 14px;
-            color: var(--text-muted);
-        }
-
-        .option-content {
-            display: flex;
-            align-items: center;
-            flex: 1;
-        }
-
-        /* Controls */
-        .btn-action {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            color: white;
-            border: none;
-            border-radius: 14px;
-            padding: 16px 32px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            width: 100%;
-            box-shadow: 0 10px 25px var(--primary-glow);
-            transition: all 0.25s ease;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .btn-action:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 14px 30px var(--primary-glow);
-        }
-
-        .btn-action:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* Results Screen */
-        .result-box {
-            text-align: center;
-        }
-        .score-badge {
-            width: 110px;
-            height: 110px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
-            border: 2px solid var(--primary);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            margin: 0 auto 24px;
-            box-shadow: 0 0 30px var(--primary-glow);
-        }
-        .score-val {
-            font-size: 2.2rem;
-            font-weight: 800;
-            line-height: 1;
-        }
-        .score-max {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-top: 4px;
-        }
-        .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin: 30px 0;
-        }
-        .stat-item {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
-            padding: 16px;
-            border-radius: 14px;
-        }
-        .stat-val {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--accent);
-        }
-        .stat-lbl {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-
-        /* Animations Keyframes */
-        @keyframes pulseSuccess {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
-        }
-        @keyframes shakeError {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-6px); }
-            75% { transform: translateX(6px); }
-        }
-
-        @media (max-width: 600px) {
-            .app-card { padding: 24px; }
-            .image-container { height: 150px; }
-            .question-text { font-size: 1.15rem; }
-        }
+        body { background-color: #090d16; color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass { background: rgba(18, 24, 38, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glow-effect { box-shadow: 0 0 50px -10px rgba(99, 102, 241, 0.25); }
     </style>
 </head>
-<body>
-    <div class="glow-sphere glow-1"></div>
-    <div class="glow-sphere glow-2"></div>
+<body class="min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden">
 
-    <div class="app-card">
-        <!-- Start View -->
-        <div id="view-start" class="view active">
-            <div style="text-align: center; padding: 10px 0 20px;">
-                <span class="badge" style="margin-bottom: 16px; display: inline-block;">Adaptive Placement Test</span>
-                <h1 style="font-size: 2.4rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.02em; background: linear-gradient(135deg, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">English Proficiency Check</h1>
-                <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.6; max-width: 520px; margin: 0 auto 32px;">
-                    Teste avançado de vocabulário, estruturas condicionais, colocações e sintaxe. Questões e imagens são randomizadas dinamicamente a cada rodada.
-                </p>
-                <button class="btn-action" onclick="QuizApp.start()">
-                    Iniciar Avaliação
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </button>
+    <!-- Ambient Glows -->
+    <div class="fixed -top-40 -left-40 w-96 h-96 bg-brand-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="fixed -bottom-40 -right-40 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+
+    <main class="w-full max-w-3xl glass rounded-3xl p-6 md:p-10 glow-effect relative z-10 transition-all duration-300">
+        
+        <!-- TOP NAV -->
+        <header class="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-brand-500 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-brand-500/30">L</div>
+                <span class="font-bold text-lg tracking-tight">Lexicon<span class="text-brand-500">.io</span></span>
             </div>
-        </div>
-
-        <!-- Quiz View -->
-        <div id="view-quiz" class="view">
-            <div class="quiz-header">
-                <div>
-                    <span class="badge" id="level-indicator">Level Advanced</span>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;" id="question-count">Question 1 of 8</p>
-                </div>
-                <!-- Circular Countdown Timer -->
-                <div class="timer-box">
-                    <svg class="timer-svg">
-                        <circle class="timer-bg" cx="27" cy="27" r="23"></circle>
-                        <circle class="timer-progress" id="timer-ring" cx="27" cy="27" r="23"></circle>
-                    </svg>
-                    <span class="timer-text" id="timer-text">20</span>
-                </div>
-            </div>
-
-            <div class="progress-track">
-                <div class="progress-fill" id="progress-bar"></div>
-            </div>
-
-            <div class="image-container">
-                <img id="question-img" src="" alt="Context Visual">
-            </div>
-
-            <h2 class="question-text" id="question-title">Loading question...</h2>
-
-            <div class="options-grid" id="options-box"></div>
-
-            <button class="btn-action" id="next-btn" onclick="QuizApp.nextQuestion()" disabled>
-                Continuar
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <button onclick="App.toggleAdminModal()" class="text-xs font-semibold text-slate-400 hover:text-white transition flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                Área do Instrutor
             </button>
-        </div>
+        </header>
 
-        <!-- Result View -->
-        <div id="view-result" class="view">
-            <div class="result-box">
-                <div class="score-badge">
-                    <span class="score-val" id="res-score">0</span>
-                    <span class="score-max" id="res-max">de 8</span>
-                </div>
-                <h2 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 8px;" id="res-title">Avaliando...</h2>
-                <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 480px; margin: 0 auto 24px;" id="res-desc">
-                    Seu resultado reflete capacidade de compreensão rápida e vocabulário contextual.
-                </p>
+        <!-- VIEW 1: REGISTRATION & LEVEL SELECT -->
+        <section id="view-setup" class="space-y-6">
+            <div class="text-center max-w-lg mx-auto">
+                <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-3 bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Avaliação de Proficiência</h1>
+                <p class="text-slate-400 text-sm">Preencha seus dados e escolha o nível de desafio para iniciar a prova individual monitorada.</p>
+            </div>
 
-                <div class="stat-grid">
-                    <div class="stat-item">
-                        <div class="stat-val" id="res-acc">0%</div>
-                        <div class="stat-lbl">Precisão</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-val" id="res-time">0s</div>
-                        <div class="stat-lbl">Tempo Médio / Questão</div>
-                    </div>
+            <form id="setup-form" onsubmit="App.startQuiz(event)" class="space-y-5 max-w-md mx-auto mt-6">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Seu Nome Completo</label>
+                    <input type="text" id="user-name" required placeholder="Ex: Lucas Silva" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition">
                 </div>
 
-                <button class="btn-action" onclick="QuizApp.start()">
-                    Reiniciar Teste
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12v-3a9 9 0 0 1 15.55-6.36L21 4m0 0v6h-6m6 10v3a9 9 0 0 1-15.55 6.36L3 20m0 0v-6h6"/></svg>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Seu E-mail</label>
+                    <input type="email" id="user-email" required placeholder="lucas@exemplo.com" class="w-full bg-slate-900/80 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nível de Dificuldade</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="difficulty" value="easy" checked class="peer hidden">
+                            <div class="text-center py-3 rounded-xl border border-white/10 bg-slate-900/40 text-slate-400 text-xs font-bold peer-checked:border-emerald-500 peer-checked:bg-emerald-500/10 peer-checked:text-emerald-400 transition">Fácil (A1/A2)</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="difficulty" value="medium" class="peer hidden">
+                            <div class="text-center py-3 rounded-xl border border-white/10 bg-slate-900/40 text-slate-400 text-xs font-bold peer-checked:border-amber-500 peer-checked:bg-amber-500/10 peer-checked:text-amber-400 transition">Médio (B1/B2)</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="difficulty" value="hard" class="peer hidden">
+                            <div class="text-center py-3 rounded-xl border border-white/10 bg-slate-900/40 text-slate-400 text-xs font-bold peer-checked:border-rose-500 peer-checked:bg-rose-500/10 peer-checked:text-rose-400 transition">Difícil (C1/C2)</div>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-500 font-bold py-3.5 rounded-xl transition shadow-lg shadow-brand-600/30 flex items-center justify-center gap-2 text-sm mt-4">
+                    Iniciar Avaliação Agora
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </button>
+            </form>
+        </section>
+
+        <!-- VIEW 2: QUIZ MONITOR -->
+        <section id="view-quiz" class="hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <span id="badge-diff" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-brand-500/20 text-brand-400 border border-brand-500/30">Nível</span>
+                    <p id="quiz-progress-text" class="text-xs text-slate-400 mt-1 font-semibold">Questão 1 de 5</p>
+                </div>
+
+                <!-- Timer -->
+                <div class="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-white/10">
+                    <svg class="w-4 h-4 text-brand-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span id="timer-display" class="font-mono font-bold text-sm">00:20</span>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                <div id="quiz-progress-bar" class="bg-gradient-to-r from-brand-500 to-purple-500 h-full w-0 transition-all duration-300"></div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="space-y-4">
+                <h2 id="question-text" class="text-lg md:text-xl font-bold leading-relaxed">Carregando pergunta...</h2>
+                <div id="options-container" class="space-y-2.5"></div>
+            </div>
+
+            <button id="btn-next" onclick="App.nextQuestion()" disabled class="w-full bg-brand-600 hover:bg-brand-500 disabled:opacity-40 disabled:cursor-not-allowed font-bold py-3.5 rounded-xl transition shadow-lg shadow-brand-600/30 text-sm">
+                Avançar
+            </button>
+        </section>
+
+        <!-- VIEW 3: RESULT -->
+        <section id="view-result" class="hidden text-center space-y-6 py-4">
+            <div class="w-20 h-20 rounded-full bg-brand-500/20 border-2 border-brand-500 flex items-center justify-center mx-auto text-brand-400">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+                <h2 class="text-2xl font-extrabold mb-1">Avaliação Concluída!</h2>
+                <p class="text-slate-400 text-sm">Seus resultados foram gravados com sucesso no banco de dados.</p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 max-w-sm mx-auto">
+                <div class="bg-slate-900/60 border border-white/10 p-4 rounded-2xl">
+                    <p class="text-2xl font-black text-brand-400" id="res-score">0/0</p>
+                    <p class="text-xs text-slate-400 font-semibold mt-1">Pontuação final</p>
+                </div>
+                <div class="bg-slate-900/60 border border-white/10 p-4 rounded-2xl">
+                    <p class="text-2xl font-black text-purple-400" id="res-time">0s</p>
+                    <p class="text-xs text-slate-400 font-semibold mt-1">Tempo Total</p>
+                </div>
+            </div>
+
+            <button onclick="location.reload()" class="bg-white/10 hover:bg-white/20 font-bold px-6 py-3 rounded-xl text-xs transition">
+                Fazer Novo Teste
+            </button>
+        </section>
+
+    </main>
+
+    <!-- ADMIN MODAL -->
+    <div id="admin-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="glass max-w-2xl w-full rounded-3xl p-6 md:p-8 relative max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    Painel do Instrutor / Admin
+                </h3>
+                <button onclick="App.toggleAdminModal()" class="text-slate-400 hover:text-white font-bold">&times;</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="admin-login-form" onsubmit="App.adminLogin(event)" class="space-y-4 py-4">
+                <p class="text-xs text-slate-400">Faça login com sua conta do Supabase Auth para acessar o histórico completo dos alunos.</p>
+                <input type="email" id="admin-email" placeholder="E-mail de admin" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500">
+                <input type="password" id="admin-password" placeholder="Senha" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500">
+                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-500 font-bold py-2.5 rounded-xl text-xs transition">Entrar no Painel</button>
+            </form>
+
+            <!-- Admin Data View -->
+            <div id="admin-dashboard" class="hidden flex-1 overflow-y-auto space-y-4 pr-1">
+                <div class="flex justify-between items-center text-xs text-slate-400">
+                    <span id="admin-count">0 submissões encontradas</span>
+                    <button onclick="App.adminLogout()" class="text-rose-400 hover:underline">Sair</button>
+                </div>
+                <div id="admin-results-list" class="space-y-3"></div>
             </div>
         </div>
     </div>
 
     <script>
-        const QUESTION_TIME = 20; // Segundos por pergunta
+        // CONFIGURAÇÃO INTEGRADAS DO SUPABASE
+        const SUPABASE_URL = "https://gchcuhyfgohoxieytvoj.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjaGN1aHlmZ29ob3hpZXl0dm9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzUwMjEsImV4cCI6MjEwNDkxMTAyMX0.pyKvyjoMBK1Se9jYnR7cXprf-oxH8Zvb6k9qRJu7KRQ";
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Banco de Questões com imagens de contexto real do Unsplash
-        const database = [
-            {
-                img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80",
-                question: "Had the engineers ________ the anomaly earlier, the system failure could have been prevented.",
-                options: ["detected", "detecting", "been detected", "detect"],
-                correct: 0,
-                level: "Advanced (C1)"
-            },
-            {
-                img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80",
-                question: "The board meeting was postponed ________ unforeseen market fluctuations.",
-                options: ["due to", "because", "owing for", "despite of"],
-                correct: 0,
-                level: "Upper-Inter (B2)"
-            },
-            {
-                img: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80",
-                question: "What does the phrase 'to hit the nail on the head' imply in a conversation?",
-                options: ["To describe exactly what is causing a situation or problem", "To make a mistake in timing", "To force someone into an agreement", "To work mechanically without thinking"],
-                correct: 0,
-                level: "Idiomatic English"
-            },
-            {
-                img: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop&q=80",
-                question: "By next September, our international research group ________ the study.",
-                options: ["will have concluded", "will conclude", "is concluding", "has concluded"],
-                correct: 0,
-                level: "Advanced (C1)"
-            },
-            {
-                img: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&auto=format&fit=crop&q=80",
-                question: "Seldom ________ such a comprehensive analysis presented with clarity.",
-                options: ["have we seen", "we have seen", "we saw", "did we seeing"],
-                correct: 0,
-                level: "Mastery (C2 Inversion)"
-            },
-            {
-                img: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80",
-                question: "The legal team recommended that the candidate ________ the clause prior to signing.",
-                options: ["scrutinize", "scrutinizes", "scrutinized", "has scrutinized"],
-                correct: 0,
-                level: "Subjunctive Mood"
-            },
-            {
-                img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&auto=format&fit=crop&q=80",
-                question: "Select the word closest in meaning to 'Fastidious':",
-                options: ["Meticulous", "Rapid", "Aggressive", "Careless"],
-                correct: 0,
-                level: "Advanced Vocabulary"
-            },
-            {
-                img: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop&q=80",
-                question: "Despite ________ extensively, the team found no evidence of structural flaws.",
-                options: ["investigating", "to investigate", "investigated", "having investigate"],
-                correct: 0,
-                level: "Upper-Inter (B2)"
-            }
-        ];
+        // BANCO DE PERGUNTAS DIVIDIDO POR DIFICULDADE
+        const QUESTION_BANK = {
+            easy: [
+                { q: "She _______ to the gym every morning.", opts: ["go", "goes", "going", "gone"], ans: 1 },
+                { q: "Where _______ you live?", opts: ["does", "are", "do", "is"], ans: 2 },
+                { q: "There isn't _______ milk left in the fridge.", opts: ["some", "many", "any", "no"], ans: 2 }
+            ],
+            medium: [
+                { q: "If I _______ more time, I would learn how to code.", opts: ["have", "had", "would have", "having"], ans: 1 },
+                { q: "The meeting has been postponed _______ unforeseen circumstances.", opts: ["because", "due to", "owing for", "despite"], ans: 1 },
+                { q: "She recommended that he _______ a doctor immediately.", opts: ["sees", "saw", "see", "has seen"], ans: 2 }
+            ],
+            hard: [
+                { q: "Had I known about the flight cancellation, I _______ earlier.", opts: ["wouldn't leave", "hadn't left", "wouldn't have left", "didn't leave"], ans: 2 },
+                { q: "Seldom _______ such an impressive display of talent.", opts: ["we have seen", "have we seen", "we saw", "did we seeing"], ans: 1 },
+                { q: "The candidate's explanation was incredibly _______, leaving no room for misinterpretation.", opts: ["ambiguous", "succinct", "equivocal", "redundant"], ans: 1 }
+            ]
+        };
 
-        // Algoritmo Fisher-Yates para embaralhamento real
-        function shuffle(array) {
-            let arr = [...array];
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-            return arr;
-        }
-
-        const QuizApp = {
+        const App = {
+            user: { name: '', email: '', level: 'easy' },
             questions: [],
             currentIndex: 0,
-            score: 0,
+            userAnswers: [],
             timer: null,
-            timeLeft: QUESTION_TIME,
-            selected: false,
+            timeLeft: 20,
             startTime: 0,
-            totalDuration: 0,
 
-            start() {
-                // Preparar e embaralhar perguntas + alternativas
-                this.questions = shuffle(database).map(q => {
-                    const originalCorrectText = q.options[q.correct];
-                    const shuffledOptions = shuffle(q.options);
-                    return {
-                        ...q,
-                        options: shuffledOptions,
-                        correct: shuffledOptions.indexOf(originalCorrectText)
-                    };
-                });
+            shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); },
 
+            startQuiz(e) {
+                e.preventDefault();
+                this.user.name = document.getElementById('user-name').value;
+                this.user.email = document.getElementById('user-email').value;
+                this.user.level = document.querySelector('input[name="difficulty"]:checked').value;
+
+                this.questions = this.shuffle(QUESTION_BANK[this.user.level]);
                 this.currentIndex = 0;
-                this.score = 0;
-                this.totalDuration = 0;
+                this.userAnswers = [];
                 this.startTime = Date.now();
 
-                this.showView('view-quiz');
+                document.getElementById('view-setup').classList.add('hidden');
+                document.getElementById('view-quiz').classList.remove('hidden');
+                
+                document.getElementById('badge-diff').textContent = `Nível ${this.user.level.toUpperCase()}`;
                 this.loadQuestion();
             },
 
-            showView(id) {
-                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-                setTimeout(() => {
-                    document.getElementById(id).classList.add('active');
-                }, 50);
-            },
-
             loadQuestion() {
-                this.selected = false;
                 clearInterval(this.timer);
-                
-                const q = this.questions[this.currentIndex];
-                const nextBtn = document.getElementById('next-btn');
-                nextBtn.disabled = true;
-                nextBtn.innerHTML = (this.currentIndex === this.questions.length - 1) 
-                    ? `Finalizar Teste <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`
-                    : `Próxima Questão <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
-
-                // Preencher Metadados
-                document.getElementById('level-indicator').textContent = q.level;
-                document.getElementById('question-count').textContent = `Questão ${this.currentIndex + 1} de ${this.questions.length}`;
-                document.getElementById('progress-bar').style.width = `${((this.currentIndex + 1) / this.questions.length) * 100}%`;
-                
-                // Imagem de contexto
-                const imgEl = document.getElementById('question-img');
-                imgEl.src = q.img;
-
-                // Enunciado
-                document.getElementById('question-title').textContent = q.question;
-
-                // Opções
-                const container = document.getElementById('options-box');
-                container.innerHTML = '';
-                const keys = ['A', 'B', 'C', 'D'];
-
-                q.options.forEach((optText, i) => {
-                    const card = document.createElement('div');
-                    card.className = 'option-card';
-                    card.innerHTML = `
-                        <div class="option-content">
-                            <span class="option-key">${keys[i]}</span>
-                            <span>${optText}</span>
-                        </div>
-                    `;
-                    card.onclick = () => this.selectOption(i);
-                    container.appendChild(card);
-                });
-
-                this.startTimer();
-            },
-
-            startTimer() {
-                this.timeLeft = QUESTION_TIME;
+                this.timeLeft = 20;
                 this.updateTimerUI();
 
-                const circumference = 145; // 2 * PI * r (r=23)
-                const ring = document.getElementById('timer-ring');
+                const q = this.questions[this.currentIndex];
+                document.getElementById('quiz-progress-text').textContent = `Questão ${this.currentIndex + 1} de ${this.questions.length}`;
+                document.getElementById('quiz-progress-bar').style.width = `${((this.currentIndex + 1) / this.questions.length) * 100}%`;
+                document.getElementById('question-text').textContent = q.q;
+
+                const optionsContainer = document.getElementById('options-container');
+                optionsContainer.innerHTML = '';
+                document.getElementById('btn-next').disabled = true;
+
+                q.opts.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = "option-btn w-full text-left p-4 rounded-xl border border-white/10 bg-slate-900/40 hover:bg-white/5 font-medium text-sm transition flex items-center justify-between";
+                    btn.innerHTML = `<span>${opt}</span><span class="w-5 h-5 rounded-full border border-white/20 flex items-center justify-center text-[10px] font-bold text-slate-500">${String.fromCharCode(65+idx)}</span>`;
+                    btn.onclick = () => this.selectOption(idx, btn);
+                    optionsContainer.appendChild(btn);
+                });
 
                 this.timer = setInterval(() => {
                     this.timeLeft--;
                     this.updateTimerUI();
-
-                    const offset = circumference - (this.timeLeft / QUESTION_TIME) * circumference;
-                    ring.style.strokeDashoffset = offset;
-
-                    if (this.timeLeft <= 5) {
-                        ring.style.stroke = "var(--error)";
-                    } else {
-                        ring.style.stroke = "var(--primary)";
-                    }
-
                     if (this.timeLeft <= 0) {
                         clearInterval(this.timer);
-                        this.timeOut();
+                        this.nextQuestion();
                     }
                 }, 1000);
             },
 
             updateTimerUI() {
-                document.getElementById('timer-text').textContent = this.timeLeft;
+                document.getElementById('timer-display').textContent = `00:${this.timeLeft < 10 ? '0' : ''}${this.timeLeft}`;
             },
 
-            selectOption(index) {
-                if (this.selected) return;
-                this.selected = true;
-                clearInterval(this.timer);
-
-                const q = this.questions[this.currentIndex];
-                const cards = document.querySelectorAll('.option-card');
-                const nextBtn = document.getElementById('next-btn');
-
-                cards.forEach(c => c.classList.add('disabled'));
-
-                if (index === q.correct) {
-                    cards[index].classList.add('correct');
-                    this.score++;
-                } else {
-                    cards[index].classList.add('wrong');
-                    cards[q.correct].classList.add('correct');
-                }
-
-                nextBtn.disabled = false;
-            },
-
-            timeOut() {
-                if (this.selected) return;
-                this.selected = true;
-                
-                const q = this.questions[this.currentIndex];
-                const cards = document.querySelectorAll('.option-card');
-                cards.forEach(c => c.classList.add('disabled'));
-                cards[q.correct].classList.add('correct');
-
-                document.getElementById('next-btn').disabled = false;
+            selectOption(idx, element) {
+                document.querySelectorAll('.option-btn').forEach(b => {
+                    b.classList.remove('border-brand-500', 'bg-brand-500/10');
+                });
+                element.classList.add('border-brand-500', 'bg-brand-500/10');
+                this.userAnswers[this.currentIndex] = idx;
+                document.getElementById('btn-next').disabled = false;
             },
 
             nextQuestion() {
+                if (this.userAnswers[this.currentIndex] === undefined) {
+                    this.userAnswers[this.currentIndex] = -1;
+                }
+
                 if (this.currentIndex < this.questions.length - 1) {
                     this.currentIndex++;
                     this.loadQuestion();
                 } else {
-                    this.finish();
+                    this.finishQuiz();
                 }
             },
 
-            finish() {
+            async finishQuiz() {
                 clearInterval(this.timer);
-                const totalTimeSec = Math.round((Date.now() - this.startTime) / 1000);
-                const avgTime = Math.round(totalTimeSec / this.questions.length);
-                const accuracy = Math.round((this.score / this.questions.length) * 100);
+                const totalTime = Math.round((Date.now() - this.startTime) / 1000);
+                
+                let score = 0;
+                this.questions.forEach((q, idx) => {
+                    if (this.userAnswers[idx] === q.ans) score++;
+                });
 
-                document.getElementById('res-score').textContent = this.score;
-                document.getElementById('res-max').textContent = `de ${this.questions.length}`;
-                document.getElementById('res-acc').textContent = `${accuracy}%`;
-                document.getElementById('res-time').textContent = `${avgTime}s`;
+                document.getElementById('res-score').textContent = `${score}/${this.questions.length}`;
+                document.getElementById('res-time').textContent = `${totalTime}s`;
 
-                const titleEl = document.getElementById('res-title');
-                const descEl = document.getElementById('res-desc');
+                document.getElementById('view-quiz').classList.add('hidden');
+                document.getElementById('view-result').classList.remove('hidden');
 
-                if (accuracy >= 85) {
-                    titleEl.textContent = "Nível C1/C2 - Avançado / Fluente";
-                    descEl.textContent = "Excelente! Você domina estruturas gramaticais complexas, vocabulário acadêmico e inversões sintáticas em tempo hábil.";
-                } else if (accuracy >= 60) {
-                    titleEl.textContent = "Nível B2 - Intermediário Superior";
-                    descEl.textContent = "Ótimo resultado! Você compreende bem a maior parte do idioma, exigindo apenas pequenos ajustes em casos específicos.";
-                } else {
-                    titleEl.textContent = "Nível A2/B1 - Básico a Intermediário";
-                    descEl.textContent = "Bom esforço! Recomendamos intensificar a leitura contextualizada e a revisão de estruturas condicionais e verbais.";
+                // ENVIAR RESULTADOS AO SUPABASE
+                try {
+                    await supabase.from('submissions').insert([
+                        {
+                            student_name: this.user.name,
+                            student_email: this.user.email,
+                            level_selected: this.user.level,
+                            score: score,
+                            total_questions: this.questions.length,
+                            time_spent_seconds: totalTime,
+                            answers: this.userAnswers
+                        }
+                    ]);
+                } catch (err) {
+                    console.error("Erro ao gravar dados:", err);
                 }
+            },
 
-                this.showView('view-result');
+            // ADMIN LOGIC
+            toggleAdminModal() {
+                document.getElementById('admin-modal').classList.toggle('hidden');
+                document.getElementById('admin-modal').classList.toggle('flex');
+            },
+
+            async adminLogin(e) {
+                e.preventDefault();
+                const email = document.getElementById('admin-email').value;
+                const password = document.getElementById('admin-password').value;
+
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+                if (error) {
+                    alert("Acesso negado: " + error.message);
+                } else {
+                    document.getElementById('admin-login-form').classList.add('hidden');
+                    document.getElementById('admin-dashboard').classList.remove('hidden');
+                    this.loadAdminData();
+                }
+            },
+
+            async loadAdminData() {
+                const { data, error } = await supabase.from('submissions').select('*').order('created_at', { ascending: false });
+                
+                if (error) return alert("Erro ao carregar dados: " + error.message);
+
+                document.getElementById('admin-count').textContent = `${data.length} submissões encontradas`;
+                const list = document.getElementById('admin-results-list');
+                list.innerHTML = '';
+
+                data.forEach(sub => {
+                    const item = document.createElement('div');
+                    item.className = "bg-slate-900/90 border border-white/10 p-3.5 rounded-xl text-xs space-y-1";
+                    item.innerHTML = `
+                        <div class="flex justify-between font-bold">
+                            <span class="text-white">${sub.student_name} (${sub.student_email})</span>
+                            <span class="text-brand-400">${sub.score}/${sub.total_questions} pts</span>
+                        </div>
+                        <div class="flex justify-between text-slate-400 text-[11px]">
+                            <span>Nível: ${sub.level_selected.toUpperCase()} | Tempo: ${sub.time_spent_seconds}s</span>
+                            <span>${new Date(sub.created_at).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            },
+
+            async adminLogout() {
+                await supabase.auth.signOut();
+                document.getElementById('admin-login-form').classList.remove('hidden');
+                document.getElementById('admin-dashboard').classList.add('hidden');
             }
         };
     </script>
